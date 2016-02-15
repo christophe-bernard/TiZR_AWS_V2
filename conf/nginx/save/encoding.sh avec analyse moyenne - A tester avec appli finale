@@ -1,0 +1,21 @@
+﻿# Inbound stream specifications (width, height, video bitrate), wait for 20 datarate values
+src=$local_hls_path_vod/$name.flv
+bandwidth_measures=20
+k=0
+while [ -z "$src_width" ] || [ -z "$src_height" ] || [ -z "$src_videodatarate_tmp" ] || (($k < $bandwidth_measures)) ; do
+	src_width=$(mediainfo --Inform=Video\;%Width% $src)
+	src_height=$(mediainfo --Inform=Video\;%Height% $src)
+	src_videodatarate_tmp=$(mediainfo --Inform=General\;%OverallBitRate% $src)
+	if [ "$src_videodatarate_tmp" ]; then
+		src_videodatarate_total=$(($src_videodatarate_total + $src_videodatarate_tmp))
+		echo k = $k >> /tmp/debug_profil
+		echo src_videodatarate_total = $src_videodatarate_total >> /tmp/debug_profil
+		k=$((k+1))
+	fi
+#	echo src_width pendant : $src_width >> /tmp/debug_profil
+#	echo src_height pendant : $src_height >> /tmp/debug_profil
+	echo src_videodatarate_tmp pendant : $src_videodatarate_tmp, k: $k >> /tmp/debug_profil
+done
+
+src_videodatarate=$(($src_videodatarate_total / $bandwidth_measures))
+echo src_videodatarate final : $src_videodatarate >> /tmp/debug_profil

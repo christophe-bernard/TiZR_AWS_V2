@@ -1,0 +1,1110 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "KeyPair2DefaultKP": {
+      "Default": "KeyPair2DefaultKP",
+      "Type": "String",
+      "Description": ""
+    }
+  },
+  "Resources": {
+    "DBInstance2tizr": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "Engine": "postgres",
+        "DBParameterGroupName": "postgres",
+        "AllowMajorVersionUpgrade": "false",
+        "MultiAZ": "true",
+        "MasterUsername": "postgres",
+        "Port": 5432,
+        "LicenseModel": "postgresql-license",
+        "MasterUserPassword": "postgres",
+        "AutoMinorVersionUpgrade": "true",
+        "PreferredBackupWindow": "02:00-02:30",
+        "VPCSecurityGroups": [
+          {
+            "Ref": "SecurityGroup2dbsgprivate"
+          },
+          {
+            "Ref": "SecurityGroup2adminsg"
+          }
+        ],
+        "DBInstanceIdentifier": "tizr",
+        "AllocatedStorage": 20,
+        "EngineVersion": "9.4.4",
+        "DBInstanceClass": "db.t2.medium",
+        "BackupRetentionPeriod": 7,
+        "DBSubnetGroupName": {
+          "Ref": "DBSubnetGroup2TiZR2VPCDB"
+        },
+        "DBName": "backend",
+        "PreferredMaintenanceWindow": "mon:04:00-mon:04:30"
+      }
+    },
+    "SecurityGroup2encodersgpublic2Egress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2encodersgpublic"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "SecurityGroup2dbsgprivate2Ingress20": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroup2apisgpublic"
+        },
+        "FromPort": "5432",
+        "ToPort": "5432",
+        "GroupId": {
+          "Ref": "SecurityGroup2dbsgprivate"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2dbsgprivate2IpPermissionsEgress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2dbsgprivate"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "SecurityGroup2DefaultSG2Ingress20": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "22",
+        "FromPort": "22",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2DefaultSG"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2dbsgprivate2Egress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2dbsgprivate"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "Group2apiasg": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "eu-west-1a",
+          "eu-west-1c",
+          "eu-west-1b"
+        ],
+        "DesiredCapacity": "0",
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "Subnet2TiZR2-VPC-eu-west-1a"
+          },
+          {
+            "Ref": "Subnet2TiZR2-VPC-eu-west-1c"
+          },
+          {
+            "Ref": "Subnet2TiZR2-VPC-eu-west-1b"
+          }
+        ],
+        "LoadBalancerNames": [
+          {
+            "Ref": "ELB2apielb"
+          }
+        ],
+        "MinSize": "0",
+        "MaxSize": "5",
+        "Cooldown": "300",
+        "LaunchConfigurationName": {
+          "Ref": "LaunchConfiguration2apilaunchconfig"
+        },
+        "HealthCheckGracePeriod": 10,
+        "HealthCheckType": "EC2"
+      }
+    },
+    "RouteTable2RT02AssociationSet22": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet2TiZR2VPCeuwest1b"
+        },
+        "RouteTableId": {
+          "Ref": "RouteTable2RT0"
+        }
+      }
+    },
+    "SecurityGroup2adminsg2IpPermissions22": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "5432",
+        "FromPort": "5432",
+        "CidrIp": "81.149.34.219/32",
+        "GroupId": {
+          "Ref": "SecurityGroup2adminsg"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2DefaultSG2IpPermissionsEgress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2DefaultSG"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "SecurityGroup2elbsgapielb2Ingress20": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "80",
+        "FromPort": "80",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2elbsgapielb"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "NetworkAcl2DefaultACL2AssociationSet21": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet2TiZR2VPCeuwest1b"
+        },
+        "NetworkAclId": {
+          "Ref": "NetworkAcl2DefaultACL"
+        }
+      }
+    },
+    "SecurityGroup2elbsgapielb2IpPermissionsEgress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "5555",
+        "FromPort": "5555",
+        "GroupId": {
+          "Ref": "SecurityGroup2elbsgapielb"
+        },
+        "DestinationSecurityGroupId": {
+          "Ref": "SecurityGroup2apisgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2elbsgencoderelb2IpPermissions22": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "1935",
+        "FromPort": "1935",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2elbsgencoderelb"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2adminsg2Egress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2adminsg"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "SecurityGroup2elbsgapielb2IpPermissions22": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "80",
+        "FromPort": "80",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2elbsgapielb"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "CloudWatch2encoderasgpolicy1alarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": {
+              "Ref": "Group2encoderasg"
+            }
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "ScalingPolicy2encoderasgpolicy1"
+          }
+        ],
+        "AlarmDescription": "",
+        "Namespace": "AWS/EC2",
+        "Period": 300,
+        "ComparisonOperator": "LessThanOrEqualToThreshold ",
+        "Statistic": "Average",
+        "Threshold": "5",
+        "MetricName": "CPUUtilization"
+      }
+    },
+    "SecurityGroup2encodersgpublic": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "GroupDescription": "Custom Security Group",
+        "Tags": [
+          {
+            "Value": "false",
+            "Key": "visops_default"
+          }
+        ]
+      }
+    },
+    "SecurityGroup2dbsgprivate": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "GroupDescription": "Custom Security Group",
+        "Tags": [
+          {
+            "Value": "false",
+            "Key": "visops_default"
+          }
+        ]
+      }
+    },
+    "ELB2encoderelb": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": [
+          {
+            "Ref": "Subnet2TiZR2VPCeuwest1a"
+          },
+          {
+            "Ref": "Subnet2TiZR2VPCeuwest1b"
+          },
+          {
+            "Ref": "Subnet2TiZR2VPCeuwest1c"
+          }
+        ],
+        "HealthCheck": {
+          "HealthyThreshold": "9",
+          "Interval": "300",
+          "Target": "TCP:1935",
+          "Timeout": "5",
+          "UnhealthyThreshold": "4"
+        },
+        "Instances": [],
+        "Listeners": [
+          {
+            "InstancePort": "1935",
+            "LoadBalancerPort": "1935",
+            "Protocol": "TCP",
+            "InstanceProtocol": "TCP"
+          }
+        ],
+        "SecurityGroups": [
+          {
+            "Ref": "SecurityGroup2elbsgencoderelb"
+          }
+        ],
+        "Scheme": "internet-facing"
+      }
+    },
+    "SecurityGroup2DefaultSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "GroupDescription": "default VPC security group",
+        "Tags": [
+          {
+            "Value": "true",
+            "Key": "visops_default"
+          }
+        ]
+      }
+    },
+    "DBSubnetGroup2TiZR2VPCDB": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "SubnetIds": [
+          {
+            "Ref": "Subnet2TiZR2VPCeuwest1a"
+          },
+          {
+            "Ref": "Subnet2TiZR2VPCeuwest1b"
+          },
+          {
+            "Ref": "Subnet2TiZR2VPCeuwest1c"
+          }
+        ],
+        "DBSubnetGroupDescription": "subnetgroup0 default description"
+      }
+    },
+    "SecurityGroup2apisgpublic2Ingress20": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroup2elbsgapielb"
+        },
+        "FromPort": "5555",
+        "ToPort": "5555",
+        "GroupId": {
+          "Ref": "SecurityGroup2apisgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "RouteTable2RT02RouteSet21": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "GatewayId": {
+          "Ref": "InternetGateway2Internetgateway"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTable2RT0"
+        }
+      }
+    },
+    "SecurityGroup2apisgpublic": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "GroupDescription": "Custom Security Group",
+        "Tags": [
+          {
+            "Value": "false",
+            "Key": "visops_default"
+          }
+        ]
+      }
+    },
+    "ScalingPolicy2encoderasgpolicy0": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "ScalingAdjustment": "1",
+        "AutoScalingGroupName": {
+          "Ref": "Group2encoderasg"
+        },
+        "Cooldown": "",
+        "AdjustmentType": "ChangeInCapacity"
+      }
+    },
+    "SecurityGroup2encodersgpublic2Ingress20": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "80",
+        "FromPort": "80",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2encodersgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2encodersgpublic2IpPermissions22": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "1935",
+        "FromPort": "1935",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2encodersgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2DefaultSG2IpPermissions22": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "22",
+        "FromPort": "22",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2DefaultSG"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "DHCPOptionsAssociation": {
+      "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "DhcpOptionsId": "default"
+      }
+    },
+    "SecurityGroup2elbsgencoderelb": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "GroupDescription": "Automatically created SG for load-balancer",
+        "Tags": [
+          {
+            "Value": "false",
+            "Key": "visops_default"
+          }
+        ]
+      }
+    },
+    "SecurityGroup2apisgpublic2Egress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2apisgpublic"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "SecurityGroup2encodersgpublic2IpPermissionsEgress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2encodersgpublic"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "SecurityGroup2elbsgencoderelb2Ingress20": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "1935",
+        "FromPort": "1935",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2elbsgencoderelb"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2elbsgencoderelb2Egress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "1935",
+        "FromPort": "1935",
+        "GroupId": {
+          "Ref": "SecurityGroup2elbsgencoderelb"
+        },
+        "DestinationSecurityGroupId": {
+          "Ref": "SecurityGroup2encodersgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "NetworkAcl2DefaultACL2AssociationSet22": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet2TiZR2VPCeuwest1c"
+        },
+        "NetworkAclId": {
+          "Ref": "NetworkAcl2DefaultACL"
+        }
+      }
+    },
+    "RouteTable2RT02AssociationSet23": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet2TiZR2VPCeuwest1c"
+        },
+        "RouteTableId": {
+          "Ref": "RouteTable2RT0"
+        }
+      }
+    },
+    "NetworkAcl2DefaultACL2AssociationSet20": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet2TiZR2VPCeuwest1a"
+        },
+        "NetworkAclId": {
+          "Ref": "NetworkAcl2DefaultACL"
+        }
+      }
+    },
+    "ScalingPolicy2apiasgpolicy0": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "ScalingAdjustment": "1",
+        "AutoScalingGroupName": {
+          "Ref": "Group2apiasg"
+        },
+        "Cooldown": "",
+        "AdjustmentType": "ChangeInCapacity"
+      }
+    },
+    "NetworkAcl2DefaultACL": {
+      "Type": "AWS::EC2::NetworkAcl",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "Tags": [
+          {
+            "Value": "true",
+            "Key": "visops_default"
+          }
+        ]
+      }
+    },
+    "SecurityGroup2adminsg2IpPermissionsEgress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2adminsg"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "ScalingPolicy2encoderasgpolicy1": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "ScalingAdjustment": "-1",
+        "AutoScalingGroupName": {
+          "Ref": "Group2encoderasg"
+        },
+        "Cooldown": "",
+        "AdjustmentType": "ChangeInCapacity"
+      }
+    },
+    "SecurityGroup2adminsg2Ingress21": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "22",
+        "FromPort": "22",
+        "CidrIp": "81.56.26.169/32",
+        "GroupId": {
+          "Ref": "SecurityGroup2adminsg"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2dbsgprivate2IpPermissions22": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroup2apisgpublic"
+        },
+        "FromPort": "5432",
+        "ToPort": "5432",
+        "GroupId": {
+          "Ref": "SecurityGroup2dbsgprivate"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2adminsg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "GroupDescription": "Custom Security Group",
+        "Tags": [
+          {
+            "Value": "false",
+            "Key": "visops_default"
+          }
+        ]
+      }
+    },
+    "SecurityGroup2elbsgapielb2Egress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "5555",
+        "FromPort": "5555",
+        "GroupId": {
+          "Ref": "SecurityGroup2elbsgapielb"
+        },
+        "DestinationSecurityGroupId": {
+          "Ref": "SecurityGroup2apisgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "VPC2vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "EnableDnsHostnames": true
+      }
+    },
+    "NetworkAcl2DefaultACL2EntrySet20": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "NetworkAcl2DefaultACL"
+        },
+        "RuleNumber": 100,
+        "Protocol": -1,
+        "PortRange": {
+          "To": "",
+          "From": ""
+        },
+        "Egress": true,
+        "RuleAction": "allow",
+        "Icmp": {
+          "Code": "",
+          "Type": ""
+        },
+        "CidrBlock": "0.0.0.0/0"
+      }
+    },
+    "AttachInternetGateway": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "InternetGatewayId": {
+          "Ref": "InternetGateway2Internetgateway"
+        }
+      }
+    },
+    "InternetGateway2Internetgateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {}
+    },
+    "Group2encoderasg": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "eu-west-1a",
+          "eu-west-1c",
+          "eu-west-1b"
+        ],
+        "DesiredCapacity": "0",
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "Subnet2TiZR2-VPC-eu-west-1a"
+          },
+          {
+            "Ref": "Subnet2TiZR2-VPC-eu-west-1c"
+          },
+          {
+            "Ref": "Subnet2TiZR2-VPC-eu-west-1b"
+          }
+        ],
+        "LoadBalancerNames": [
+          {
+            "Ref": "ELB2encoderelb"
+          }
+        ],
+        "MinSize": "0",
+        "MaxSize": "5",
+        "Cooldown": "300",
+        "LaunchConfigurationName": {
+          "Ref": "LaunchConfiguration2encoderlaunchconfig"
+        },
+        "HealthCheckGracePeriod": 300,
+        "HealthCheckType": "EC2"
+      }
+    },
+    "SecurityGroup2apisgpublic2IpPermissions22": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroup2elbsgapielb"
+        },
+        "FromPort": "5555",
+        "ToPort": "5555",
+        "GroupId": {
+          "Ref": "SecurityGroup2apisgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "LaunchConfiguration2encoderlaunchconfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "UserData": "",
+        "InstanceMonitoring": true,
+        "ImageId": "ami-bee84fcd",
+        "KeyName": "aws-tizr-admin",
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "SnapshotId": "snap-5ea89a73",
+              "VolumeSize": 50,
+              "VolumeType": "gp2"
+            }
+          }
+        ],
+        "EbsOptimized": false,
+        "SecurityGroups": [
+          {
+            "Ref": "SecurityGroup2encodersgpublic"
+          },
+          {
+            "Ref": "SecurityGroup2adminsg"
+          }
+        ],
+        "InstanceType": "m4.xlarge",
+        "AssociatePublicIpAddress": true
+      }
+    },
+    "SecurityGroup2adminsg2Ingress20": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "5432",
+        "FromPort": "5432",
+        "CidrIp": "81.56.26.169/32",
+        "GroupId": {
+          "Ref": "SecurityGroup2adminsg"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2elbsgencoderelb2IpPermissionsEgress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "1935",
+        "FromPort": "1935",
+        "GroupId": {
+          "Ref": "SecurityGroup2elbsgencoderelb"
+        },
+        "DestinationSecurityGroupId": {
+          "Ref": "SecurityGroup2encodersgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2adminsg2Ingress22": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "22",
+        "FromPort": "22",
+        "CidrIp": "81.149.34.219/32",
+        "GroupId": {
+          "Ref": "SecurityGroup2adminsg"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "SecurityGroup2adminsg2Ingress23": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "5432",
+        "FromPort": "5432",
+        "CidrIp": "81.149.34.219/32",
+        "GroupId": {
+          "Ref": "SecurityGroup2adminsg"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "Subnet2TiZR2VPCeuwest1b": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "Tags": [],
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": "eu-west-1b"
+      }
+    },
+    "Subnet2TiZR2VPCeuwest1c": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "Tags": [],
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "CidrBlock": "10.0.2.0/24",
+        "AvailabilityZone": "eu-west-1c"
+      }
+    },
+    "SecurityGroup2DefaultSG2Egress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2DefaultSG"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "Subnet2TiZR2VPCeuwest1a": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "Tags": [],
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZone": "eu-west-1a"
+      }
+    },
+    "SecurityGroup2apisgpublic2IpPermissionsEgress20": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "ToPort": "65535",
+        "FromPort": "0",
+        "GroupId": {
+          "Ref": "SecurityGroup2apisgpublic"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "NetworkAcl2DefaultACL2EntrySet21": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "NetworkAcl2DefaultACL"
+        },
+        "RuleNumber": 100,
+        "Protocol": -1,
+        "PortRange": {
+          "To": "",
+          "From": ""
+        },
+        "Egress": false,
+        "RuleAction": "allow",
+        "Icmp": {
+          "Code": "",
+          "Type": ""
+        },
+        "CidrBlock": "0.0.0.0/0"
+      }
+    },
+    "RouteTable2RT0": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "Tags": [
+          {
+            "Value": "true",
+            "Key": "visops_default"
+          }
+        ]
+      }
+    },
+    "SecurityGroup2encodersgpublic2Ingress22": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "1935",
+        "FromPort": "1935",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2encodersgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "CloudWatch2encoderasgpolicy0alarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": {
+              "Ref": "Group2encoderasg"
+            }
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "ScalingPolicy2encoderasgpolicy0"
+          }
+        ],
+        "AlarmDescription": "",
+        "Namespace": "AWS/EC2",
+        "Period": 300,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Statistic": "Average",
+        "Threshold": "30",
+        "MetricName": "CPUUtilization"
+      }
+    },
+    "ELB2apielb": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": [
+          {
+            "Ref": "Subnet2TiZR2VPCeuwest1b"
+          },
+          {
+            "Ref": "Subnet2TiZR2VPCeuwest1c"
+          },
+          {
+            "Ref": "Subnet2TiZR2VPCeuwest1a"
+          }
+        ],
+        "HealthCheck": {
+          "HealthyThreshold": "9",
+          "Interval": "30",
+          "Target": "HTTP:5555/v1",
+          "Timeout": "3",
+          "UnhealthyThreshold": "4"
+        },
+        "Instances": [],
+        "Listeners": [
+          {
+            "InstancePort": "5555",
+            "LoadBalancerPort": "80",
+            "Protocol": "TCP",
+            "InstanceProtocol": "TCP"
+          }
+        ],
+        "SecurityGroups": [
+          {
+            "Ref": "SecurityGroup2elbsgapielb"
+          }
+        ],
+        "Scheme": "internet-facing"
+      }
+    },
+    "SecurityGroup2encodersgpublic2Ingress21": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "ToPort": "443",
+        "FromPort": "443",
+        "CidrIp": "0.0.0.0/0",
+        "GroupId": {
+          "Ref": "SecurityGroup2encodersgpublic"
+        },
+        "IpProtocol": "tcp"
+      }
+    },
+    "RouteTable2RT02AssociationSet24": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet2TiZR2VPCeuwest1a"
+        },
+        "RouteTableId": {
+          "Ref": "RouteTable2RT0"
+        }
+      }
+    },
+    "LaunchConfiguration2apilaunchconfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "UserData": "IyEvYmluL2Jhc2gKY2QgL3Jvb3QvVGlaUl9BUElfQU5TSUJMRV9QTEFZQk9PSwpiYXNoIGRlcGxv\neQ==\n",
+        "InstanceMonitoring": true,
+        "ImageId": "ami-cb0da8b8",
+        "KeyName": "aws-tizr-admin",
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "SnapshotId": "snap-2d1c370c",
+              "VolumeSize": 8,
+              "VolumeType": "gp2"
+            }
+          }
+        ],
+        "EbsOptimized": false,
+        "SecurityGroups": [
+          {
+            "Ref": "SecurityGroup2apisgpublic"
+          },
+          {
+            "Ref": "SecurityGroup2adminsg"
+          }
+        ],
+        "InstanceType": "t2.medium",
+        "AssociatePublicIpAddress": true
+      }
+    },
+    "SecurityGroup2elbsgapielb": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC2vpc"
+        },
+        "GroupDescription": "Automatically created SG for load-balancer",
+        "Tags": [
+          {
+            "Value": "false",
+            "Key": "visops_default"
+          }
+        ]
+      }
+    },
+    "CloudWatch2apiasgpolicy0alarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "2",
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": {
+              "Ref": "Group2apiasg"
+            }
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "ScalingPolicy2apiasgpolicy0"
+          }
+        ],
+        "AlarmDescription": "",
+        "Namespace": "AWS/EC2",
+        "Period": 300,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Statistic": "Average",
+        "Threshold": "60",
+        "MetricName": "CPUUtilization"
+      }
+    }
+  }
+}

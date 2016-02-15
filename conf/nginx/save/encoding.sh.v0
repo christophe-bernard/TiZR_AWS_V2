@@ -1,0 +1,193 @@
+#!/bin/bash
+app=$1
+name=$2
+query_string=$3
+echo var : app=$app, name=$name, query_string=$query_string >> /tmp/debug_profil
+
+
+# Expected query string variables :
+# - unid
+# - bw : bandwidth
+# - w : width
+# - h : height
+
+# Quality constants
+quality_pixel_factor=331776
+quality_bandwidth_factor=600 # Raise to increase quality
+
+declare -A encoding_profile
+num_rows=5 # 5 encoding profile
+num_columns=4 # Width / Height / Video datarate / Audio datarate
+
+# Profile 1
+encoding_profile[1,1]=256
+encoding_profile[1,2]=144
+encoding_profile[1,3]=135000
+encoding_profile[1,4]=32000
+
+# Profile 2
+encoding_profile[2,1]=512
+encoding_profile[2,2]=288
+encoding_profile[2,3]=381000
+encoding_profile[2,4]=96000
+
+# Profile 3
+encoding_profile[3,1]=768
+encoding_profile[3,2]=432
+encoding_profile[3,3]=700000
+encoding_profile[3,4]=128000
+
+# Profile 4
+encoding_profile[4,1]=1024
+encoding_profile[4,2]=576
+encoding_profile[4,3]=1078000
+encoding_profile[4,4]=128000
+
+# Profile 5
+encoding_profile[5,1]=1280
+encoding_profile[5,2]=720
+encoding_profile[5,3]=1506000
+encoding_profile[5,4]=128000
+
+# Mount_point
+hls_path_live="/mnt/hlsLive"
+
+
+# Explode query string (variable and values)
+saveIFS=$IFS
+IFS='=&'
+parm=($query_string)
+IFS=$saveIFS
+for ((i=0; i<${#parm[@]}; i+=2))
+do
+	declare var_${parm[i]}=${parm[i+1]}
+done
+
+
+# Check if unid directory exists, else, create it
+if [ ! -d "$hls_path_live/$var_unid" ];then
+	mkdir $hls_path_live/$var_unid
+	echo "dir does not exist -> mkdir $var_unid" >> /tmp/debug_profil
+fi
+
+# Inbound stream specifications (width, height, video bitrate)
+src="/var/www/hlsVod/$name.flv"
+echo src : $src >> /tmp/debug_profil
+
+echo src_width avant : $src_width >> /tmp/debug_profil
+echo src_height avant : $src_height >> /tmp/debug_profil
+echo src_videodatarate avant : $src_videodatarate >> /tmp/debug_profil
+echo
+
+while [ -z "$src_width" ] || [ -z "$src_height" ] || [ -z "$src_videodatarate" ]; do
+	echo
+	echo En attente ...  >> /tmp/debug_profil
+	src_width=$(mediainfo --Inform=Video\;%Width% $src)
+	src_height=$(mediainfo --Inform=Video\;%Height% $src)
+	src_videodatarate=$(mediainfo --Inform=Video\;%BitRate% $src)	
+
+	echo src_width pendant : $src_width >> /tmp/debug_profil
+	echo src_height pendant : $src_height >> /tmp/debug_profil
+	echo src_videodatarate pendant : $src_videodatarate >> /tmp/debug_profil
+done
+
+
+echo
+echo src_width apres : $src_width >> /tmp/debug_profil
+echo src_height apres : $src_height >> /tmp/debug_profil
+echo src_videodatarate apres : $src_videodatarate >> /tmp/debug_profil
+
+
+echo ---------------------------Spec $src_width $src_height $src_videodatarate $src_audiodatarate >> /tmp/debug_profil
+
+src_nb_pixels=$(($src_width*$src_height))
+
+
+
+
+# Select profile to apply
+ideal_videodatarate=$(printf %.0f $(echo $src_width $src_height $quality_pixel_factor $quality_bandwidth_factor| awk '{print ((($1*$2)/($3))^0.75)*$4}'))
+# echo ideal video data rate=$ideal_videodatarate >> /tmp/debug_ratio
+
+# echo $src_videodatarate vs $ideal_videodatarate >> /tmp/debug_profil
+
+
+src_nb_pixel=$(($src_width*$src_height))
+echo nb pixel source : $src_nb_pixel  >> /tmp/debug_profil
+
+# Potential profile
+for ((i=1;i<=num_rows;i++)) do
+	nb_pixel_profile=$((${encoding_profile[$i,1]}*${encoding_profile[$i,2]}))
+	if (($src_nb_pixel >= $nb_pixel_profile)); then
+		potential_profile[$i]=$i
+	else
+		break
+	fi
+done
+
+nb_potential_profile=${#potential_profile[@]}
+
+echo Potential Selection : $nb_potential_profile  >> /tmp/debug_profil
+for selection in ${potential_profile[*]}
+do
+	echo $selection  >> /tmp/debug_profil
+done
+
+
+# Final profile
+for ((i=1;i<=nb_potential_profile;i++)) do
+	if (($src_videodatarate >= ${encoding_profile[$i,3]})); then
+		selected_profile[$i]=$i
+	else
+		break
+	fi
+done
+
+nb_selected_profile=${#selected_profile[@]}
+
+echo Final Selection : $nb_selected_profile  >> /tmp/debug_profil
+for selection in ${selected_profile[*]}
+do
+	echo $selection  >> /tmp/debug_profil
+done
+
+
+
+# Encoding command for live content
+encoding_command_header="ffmpeg -i rtmp://localhost/${app}/${name} -threads auto "
+if (($nb_selected_profile == 1)); then
+	encoding_command_body+="-c:v libx264 -profile:v baseline -level 3.0 -g 10 -b:v ${encoding_profile[$i,3]} -vf scale=${encoding_profile[$i,1]}:-1 -c:a aac -ac 1 -strict -2 -b:a ${encoding_profile[$i,4]} -f flv \"rtmp://localhost app=hls playpath=$var_unid/${name}?unid=$var_unid\" "	
+else
+	for ((i=1;i<=nb_selected_profile;i++)) do
+		encoding_command_body+="-c:v libx264 -profile:v baseline -level 3.0 -g 10 -b:v ${encoding_profile[$i,3]} -vf scale=${encoding_profile[$i,1]}:-1 -c:a aac -ac 1 -strict -2 -b:a ${encoding_profile[$i,4]} -f flv \"rtmp://localhost app=hls playpath=$var_unid/${name}_level$i?unid=$var_unid\" "
+	done
+	
+#	echo $m3u8_body >> $hls_path_live/$var_unid/${name}.m3u8
+fi
+
+encoding_command_footer="2>>/var/log/ffmpegLog/hls-${name}.log"
+
+encoding_command=$encoding_command_header$encoding_command_body$encoding_command_footer
+
+echo encoding command : $encoding_command  >> /tmp/debug_profil
+eval "$encoding_command &"
+
+
+# Create meta m3u8 manifest if needed (ie more than one stream)
+if (($nb_selected_profile > 1)); then
+	# m3u8 for Live
+	echo "#EXTM3U" > $hls_path_live/$var_unid/${name}.m3u8
+	echo "#EXT-X-VERSION:3" >> $hls_path_live/$var_unid/${name}.m3u8
+	# m3u8 for Vod
+	echo "#EXTM3U" > $hls_path_vod/$var_unid/${name}.m3u8
+	echo "#EXT-X-VERSION:3" >> $hls_path_vod/$var_unid/${name}.m3u8	
+	for ((i=1;i<=nb_selected_profile;i++)) do
+		media_rate=$((${encoding_profile[$i,3]}+${encoding_profile[$i,4]}))
+		# m3u8 for Live
+		echo "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=$media_rate" >> $hls_path_live/$var_unid/${name}.m3u8
+		echo "/$var_unid/${name}_level$i.m3u8" >> $hls_path_live/$var_unid/${name}.m3u8
+		# m3u8 for Vod
+		echo "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=$media_rate" >> $hls_path_vod/$var_unid/${name}.m3u8
+		echo "${name}_level$i.m3u8" >> $hls_path_vod/$var_unid/${name}.m3u8
+	done
+fi
